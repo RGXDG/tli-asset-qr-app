@@ -1,7 +1,3 @@
-A professional `README.md` is the "manual" for your in-house tool. It ensures that anyone else using the repository knows exactly how to maintain or install the app.
-
-Below is an extensive, well-formatted README designed specifically for your **Asset QR Gen** project.
-
 ---
 
 # 📋 Asset QR Gen (PWA)
