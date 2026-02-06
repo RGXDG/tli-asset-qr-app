@@ -26,6 +26,14 @@
         .btn-test { background: #f59e0b; color: white; border: 2px dashed #b45309; }
         
         #canvas { margin-top: 20px; display: flex; justify-content: center; }
+
+        @media print {
+            body { background: white; padding: 0; }
+            .card { box-shadow: none; border: none; width: 100%; max-width: none; padding: 0; margin: 0; }
+            .card > *:not(#canvas) { display: none; }
+            #canvas { margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
+            @page { margin: 0; }
+        }
     </style>
 </head>
 <body>
@@ -178,4 +186,5 @@
     }
 </script>
 </body>
+
 </html>
