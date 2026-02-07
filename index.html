@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Asset QR Gen v4</title>
+    <title>Asset QR Pro</title>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Asset QR">
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/241/241528.png">
-    <link rel="manifest" href="manifest.json">
+    <link rel="manifest" href="data:application/manifest+json,{'name':'AssetQR','short_name':'AssetQR','start_url':'.','display':'standalone','background_color':'#ffffff','theme_color':'#2563eb'}" />
+    
     <script src="https://unpkg.com/qr-code-styling@1.5.0/lib/qr-code-styling.js"></script>
+    
     <style>
         body { font-family: sans-serif; padding: 20px; background: #f4f4f9; display: flex; flex-direction: column; align-items: center; }
         .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%; max-width: 450px; }
@@ -17,22 +17,22 @@
         label { font-size: 0.8rem; color: #64748b; font-weight: bold; }
         input, select { width: 100%; padding: 10px; margin: 5px 0 12px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; background: #fff; font-size: 14px; }
         .specs-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+        
         button { width: 100%; padding: 12px; margin-top: 8px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; }
         .btn-gen { background: #2563eb; color: white; }
         .btn-save { background: #10b981; color: white; }
+        .btn-print { background: #6366f1; color: white; }
         .btn-clear { background: #94a3b8; color: white; }
-        
-        /* TESTER BUTTON STYLE */
-        .btn-test { background: #f59e0b; color: white; border: 2px dashed #b45309; }
+        .btn-test { background: #f59e0b; color: white; border: 2px dashed #b45309; margin-bottom: 15px; }
         
         #canvas { margin-top: 20px; display: flex; justify-content: center; }
 
+        /* PRINT LOGIC: Hides everything except the QR code when printing */
         @media print {
             body { background: white; padding: 0; }
-            .card { box-shadow: none; border: none; width: 100%; max-width: none; padding: 0; margin: 0; }
-            .card > *:not(#canvas) { display: none; }
-            #canvas { margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
-            @page { margin: 0; }
+            .card, button, label, input, select, h2, hr { display: none !important; }
+            #canvas { display: block !important; visibility: visible; position: absolute; left: 0; top: 0; width: 100%; text-align: center; }
+            #canvas * { visibility: visible; }
         }
     </style>
 </head>
@@ -42,7 +42,7 @@
     <h2>Asset Tag Generator</h2>
     
     <button class="btn-test" onclick="randomizeData()">DEBUG: Randomize Data</button>
-    <hr style="margin: 15px 0; border: 0; border-top: 1px solid #eee;">
+
     <label>Manufacturer</label>
     <select id="make">
         <option value="">Select Make...</option>
@@ -103,38 +103,33 @@
     <div id="canvas"></div>
     
     <div id="controls" style="display:none; text-align: center; margin-top: 10px;">
-        <button class="btn-save" onclick="download('png')">Download Image (PNG)</button>
-        <button class="btn-save" onclick="download('pdf')">Download PDF</button>
+        <button class="btn-save" onclick="download('png')">Save as Image (PNG)</button>
+        <button class="btn-print" onclick="window.print()">Print to PDF / Label</button>
     </div>
 </div>
 
 <script>
     let qrCode;
 
-    // --- START RANDOMIZER LOGIC (Comment out for production) ---
     function randomizeData() {
         const makes = ["Dell", "Lenovo", "HP", "Apple"];
-        const oss = ["Windows 10", "Windows 11", "macOS Sonoma", "Linux"];
+        const oss = ["Windows 11", "macOS", "Linux"];
         const cpus = ["i5", "i7", "Mac", "Ryzen"];
         const disks = ["256GB", "512GB", "1TB"];
         const rams = ["8GB", "16GB", "32GB"];
-        const conds = ["Fair", "Good", "Excellent"];
-        
         document.getElementById('make').value = makes[Math.floor(Math.random() * makes.length)];
-        document.getElementById('model').value = "Test-Model-" + Math.floor(Math.random() * 100);
+        document.getElementById('model').value = "Latitude 7420";
         document.getElementById('os').value = oss[Math.floor(Math.random() * oss.length)];
-        document.getElementById('sn').value = "SN-" + Math.random().toString(36).substring(2, 10).toUpperCase();
+        document.getElementById('sn').value = "SN-" + Math.random().toString(36).substring(2, 8).toUpperCase();
         document.getElementById('spec_cpu').value = cpus[Math.floor(Math.random() * cpus.length)];
         document.getElementById('spec_disk').value = disks[Math.floor(Math.random() * disks.length)];
         document.getElementById('spec_ram').value = rams[Math.floor(Math.random() * rams.length)];
-        document.getElementById('condition').value = conds[Math.floor(Math.random() * conds.length)];
+        document.getElementById('condition').value = "Good";
         document.getElementById('volunteer').value = "Tester";
     }
-    // --- END RANDOMIZER LOGIC ---
 
     function clearForm() {
-        const ids = ['make', 'model', 'os', 'sn', 'spec_cpu', 'spec_disk', 'spec_ram', 'condition', 'volunteer'];
-        ids.forEach(id => document.getElementById(id).value = "");
+        ['make', 'model', 'os', 'sn', 'spec_cpu', 'spec_disk', 'spec_ram', 'condition', 'volunteer'].forEach(id => document.getElementById(id).value = "");
         document.getElementById("canvas").innerHTML = "";
         document.getElementById("controls").style.display = "none";
     }
@@ -152,21 +147,14 @@
             vol: document.getElementById('volunteer').value.trim()
         };
 
-        for (let key in fields) {
-            if (!fields[key]) {
-                alert("Please fill in all fields.");
-                return;
-            }
-        }
+        for (let key in fields) { if (!fields[key]) { alert("Please fill in all fields."); return; } }
         
-        const dataString = `MAKE:${fields.make}||MOD:${fields.model}||OS:${fields.os}||SN:${fields.sn}||CPU:${fields.cpu}||SSD:${fields.disk}||RAM:${fields.ram}||COND:${fields.cond}||BY:${fields.vol}`;
+        const dataString = `MAKE:${fields.make}|MOD:${fields.model}|OS:${fields.os}|SN:${fields.sn}|CPU:${fields.cpu}|SSD:${fields.disk}|RAM:${fields.ram}|COND:${fields.cond}|BY:${fields.vol}`;
 
         qrCode = new QRCodeStyling({
-            width: 300,
-            height: 300,
-            data: dataString,
-            dotsOptions: { color: "#1e293b", type: "rounded" },
-            backgroundOptions: { color: "#fff" },
+            width: 300, height: 300, data: dataString,
+            dotsOptions: { color: "#000000", type: "square" },
+            backgroundOptions: { color: "#ffffff" },
             errorCorrectionLevel: "H"
         });
 
@@ -174,17 +162,19 @@
         canvasDiv.innerHTML = ""; 
         qrCode.append(canvasDiv);
         document.getElementById("controls").style.display = "block";
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
     }
 
-    function download(format) {
+    async function download(format) {
         if (!qrCode) return;
         qrCode.download({ name: `Asset-${document.getElementById('sn').value}`, extension: format });
     }
 
+    // Register Service Worker for PWA Offline mode
     if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('./sw.js');
+        navigator.serviceWorker.register('data:application/javascript;base64,' + btoa("self.addEventListener('fetch', (e) => e.respondWith(fetch(e.request).catch(() => caches.match(e.request))));"));
     }
 </script>
-</body>
 
+</body>
 </html>
