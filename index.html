@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Asset QR">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/241/241528.png">
-    <link rel="manifest" href="manifest.json">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://unpkg.com/qr-code-styling@1.5.0/lib/qr-code-styling.js"></script>
     <style>
         body { font-family: sans-serif; padding: 20px; background: #f4f4f9; display: flex; flex-direction: column; align-items: center; }
@@ -21,10 +21,7 @@
         .btn-gen { background: #2563eb; color: white; }
         .btn-save { background: #10b981; color: white; }
         .btn-clear { background: #94a3b8; color: white; }
-        
-        /* TESTER BUTTON STYLE */
         .btn-test { background: #f59e0b; color: white; border: 2px dashed #b45309; }
-        
         #canvas { margin-top: 20px; display: flex; justify-content: center; }
     </style>
 </head>
@@ -95,15 +92,14 @@
     <div id="canvas"></div>
     
     <div id="controls" style="display:none; text-align: center; margin-top: 10px;">
-        <button class="btn-save" onclick="download('png')">Download Image (PNG)</button>
-        <button class="btn-save" onclick="download('pdf')">Download PDF</button>
+        <button class="btn-save" onclick="handleDownload('png')">Download Image (PNG)</button>
+        <button class="btn-save" onclick="handleDownload('pdf')">Download PDF</button>
     </div>
 </div>
 
 <script>
     let qrCode;
 
-    // --- START RANDOMIZER LOGIC (Comment out for production) ---
     function randomizeData() {
         const makes = ["Dell", "Lenovo", "HP", "Apple"];
         const oss = ["Windows 10", "Windows 11", "macOS Sonoma", "Linux"];
@@ -122,7 +118,6 @@
         document.getElementById('condition').value = conds[Math.floor(Math.random() * conds.length)];
         document.getElementById('volunteer').value = "Tester";
     }
-    // --- END RANDOMIZER LOGIC ---
 
     function clearForm() {
         const ids = ['make', 'model', 'os', 'sn', 'spec_cpu', 'spec_disk', 'spec_ram', 'condition', 'volunteer'];
@@ -168,9 +163,47 @@
         document.getElementById("controls").style.display = "block";
     }
 
-    function download(format) {
+    async function handleDownload(format) {
         if (!qrCode) return;
-        qrCode.download({ name: `Asset-${document.getElementById('sn').value}`, extension: format });
+        const fileName = `Asset-${document.getElementById('sn').value}`;
+
+        if (format === 'png') {
+            qrCode.download({ name: fileName, extension: "png" });
+        } else if (format === 'pdf') {
+            // Use jsPDF for better mobile PWA support
+            const { jsPDF } = window.jspdf;
+            
+            // 1. Get the QR code as a Raw Image (Blob)
+            const rawBlob = await qrCode.getRawData("png");
+            const reader = new FileReader();
+            
+            reader.onload = async (e) => {
+                const imgData = e.target.result;
+                const pdf = new jsPDF();
+                
+                // Add image to PDF (Centered)
+                pdf.addImage(imgData, 'PNG', 40, 40, 130, 130);
+                pdf.text(`Asset Tag: ${fileName}`, 105, 180, { align: 'center' });
+
+                const pdfBlob = pdf.output('blob');
+                const pdfFile = new File([pdfBlob], `${fileName}.pdf`, { type: "application/pdf" });
+
+                // Check for Web Share API (Best for iOS/Android PWAs)
+                if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
+                    try {
+                        await navigator.share({
+                            files: [pdfFile],
+                            title: 'Asset QR PDF',
+                        });
+                    } catch (err) {
+                        pdf.save(`${fileName}.pdf`); // Fallback
+                    }
+                } else {
+                    pdf.save(`${fileName}.pdf`); // Desktop Fallback
+                }
+            };
+            reader.readAsDataURL(rawBlob);
+        }
     }
 
     if ('serviceWorker' in navigator) {
