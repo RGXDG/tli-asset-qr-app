@@ -11,7 +11,7 @@ Asset QR Gen simplifies the process of labeling hardware. By entering device spe
 * **Validation:** Prevents the generation of QR codes with missing data fields.
 * **Multi-Format Export:** Download tags as **PNG** (for digital logs) or **PDF** (for high-resolution printing).
 * **PWA Enabled:** Can be "installed" as a native-feeling app on mobile devices.
-* **Offline Support:** Works in warehouses or remote locations without an active internet connection.
+* **Offline Support:** Works on Mobile  without an active internet connection (If cached).
 * **Debug Mode:** Includes a randomizer button for quick testing of label layouts.
 
 ---
