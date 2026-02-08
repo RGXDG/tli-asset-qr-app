@@ -8,8 +8,10 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Asset QR">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/241/241528.png">
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://unpkg.com/qr-code-styling@1.5.0/lib/qr-code-styling.js"></script>
+    
     <style>
         body { font-family: sans-serif; padding: 20px; background: #f4f4f9; display: flex; flex-direction: column; align-items: center; }
         .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%; max-width: 450px; }
@@ -18,11 +20,15 @@
         input, select { width: 100%; padding: 10px; margin: 5px 0 12px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; background: #fff; font-size: 14px; }
         .specs-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
         button { width: 100%; padding: 12px; margin-top: 8px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        
         .btn-gen { background: #2563eb; color: white; }
         .btn-save { background: #10b981; color: white; }
+        .btn-share { background: #8b5cf6; color: white; } /* Purple for Share */
         .btn-clear { background: #94a3b8; color: white; }
         .btn-test { background: #f59e0b; color: white; border: 2px dashed #b45309; }
+        
         #canvas { margin-top: 20px; display: flex; justify-content: center; }
+        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -32,6 +38,7 @@
     
     <button class="btn-test" onclick="randomizeData()">DEBUG: Randomize Data</button>
     <hr style="margin: 15px 0; border: 0; border-top: 1px solid #eee;">
+    
     <label>Manufacturer</label>
     <select id="make">
         <option value="">Select Make...</option>
@@ -43,36 +50,17 @@
     </select>
 
     <label>Model & OS</label>
-    <input type="text" id="model" placeholder="Model (e.g. XPS 15)">
-    <input type="text" id="os" placeholder="Operating System (e.g. Win 11)">
+    <input type="text" id="model" placeholder="Model">
+    <input type="text" id="os" placeholder="OS">
     
     <label>Serial Number</label>
     <input type="text" id="sn" placeholder="Serial Number">
 
     <label>Specifications</label>
     <div class="specs-grid">
-        <select id="spec_cpu">
-            <option value="">CPU</option>
-            <option value="i5">i5</option>
-            <option value="i7">i7</option>
-            <option value="Mac">Mac</option>
-            <option value="Ryzen">Ryzen</option>
-        </select>
-        <select id="spec_disk">
-            <option value="">Disk</option>
-            <option value="120GB">120GB</option>
-            <option value="256GB">256GB</option>
-            <option value="512GB">512GB</option>
-            <option value="1TB">1TB</option>
-            <option value="2TB">2TB</option>
-        </select>
-        <select id="spec_ram">
-            <option value="">RAM</option>
-            <option value="8GB">8GB</option>
-            <option value="16GB">16GB</option>
-            <option value="32GB">32GB</option>
-            <option value="64GB">64GB</option>
-        </select>
+        <select id="spec_cpu"><option value="">CPU</option><option value="i5">i5</option><option value="i7">i7</option><option value="Mac">Mac</option><option value="Ryzen">Ryzen</option></select>
+        <select id="spec_disk"><option value="">Disk</option><option value="256GB">256GB</option><option value="512GB">512GB</option><option value="1TB">1TB</option></select>
+        <select id="spec_ram"><option value="">RAM</option><option value="8GB">8GB</option><option value="16GB">16GB</option><option value="32GB">32GB</option></select>
     </div>
 
     <label>Condition</label>
@@ -83,7 +71,7 @@
         <option value="Excellent">Excellent</option>
     </select>
 
-    <label>Volunteer Name</label>
+    <label>Volunteer</label>
     <input type="text" id="volunteer" placeholder="Your Name">
     
     <button class="btn-gen" onclick="generateQR()">Generate QR Code</button>
@@ -91,9 +79,15 @@
     
     <div id="canvas"></div>
     
-    <div id="controls" style="display:none; text-align: center; margin-top: 10px;">
-        <button class="btn-save" onclick="handleDownload('png')">Download Image (PNG)</button>
-        <button class="btn-save" onclick="handleDownload('pdf')">Download PDF</button>
+    <div id="controls" style="display:none; text-align: center;">
+        <div class="btn-group">
+            <button class="btn-save" onclick="handleAction('download', 'png')">Save PNG</button>
+            <button class="btn-share" onclick="handleAction('share', 'png')">Share PNG</button>
+        </div>
+        <div class="btn-group">
+            <button class="btn-save" onclick="handleAction('download', 'pdf')">Save PDF</button>
+            <button class="btn-share" onclick="handleAction('share', 'pdf')">Share PDF</button>
+        </div>
     </div>
 </div>
 
@@ -101,22 +95,15 @@
     let qrCode;
 
     function randomizeData() {
-        const makes = ["Dell", "Lenovo", "HP", "Apple"];
-        const oss = ["Windows 10", "Windows 11", "macOS Sonoma", "Linux"];
-        const cpus = ["i5", "i7", "Mac", "Ryzen"];
-        const disks = ["256GB", "512GB", "1TB"];
-        const rams = ["8GB", "16GB", "32GB"];
-        const conds = ["Fair", "Good", "Excellent"];
-        
-        document.getElementById('make').value = makes[Math.floor(Math.random() * makes.length)];
-        document.getElementById('model').value = "Test-Model-" + Math.floor(Math.random() * 100);
-        document.getElementById('os').value = oss[Math.floor(Math.random() * oss.length)];
-        document.getElementById('sn').value = "SN-" + Math.random().toString(36).substring(2, 10).toUpperCase();
-        document.getElementById('spec_cpu').value = cpus[Math.floor(Math.random() * cpus.length)];
-        document.getElementById('spec_disk').value = disks[Math.floor(Math.random() * disks.length)];
-        document.getElementById('spec_ram').value = rams[Math.floor(Math.random() * rams.length)];
-        document.getElementById('condition').value = conds[Math.floor(Math.random() * conds.length)];
-        document.getElementById('volunteer').value = "Tester";
+        document.getElementById('make').value = "Dell";
+        document.getElementById('model').value = "Latitude";
+        document.getElementById('os').value = "Win 11";
+        document.getElementById('sn').value = "SN-" + Math.random().toString(36).substring(7).toUpperCase();
+        document.getElementById('spec_cpu').value = "i7";
+        document.getElementById('spec_disk').value = "512GB";
+        document.getElementById('spec_ram').value = "16GB";
+        document.getElementById('condition').value = "Excellent";
+        document.getElementById('volunteer').value = "Admin";
     }
 
     function clearForm() {
@@ -128,33 +115,17 @@
 
     function generateQR() {
         const fields = {
-            make: document.getElementById('make').value,
-            model: document.getElementById('model').value.trim(),
-            os: document.getElementById('os').value.trim(),
             sn: document.getElementById('sn').value.trim(),
-            cpu: document.getElementById('spec_cpu').value,
-            disk: document.getElementById('spec_disk').value,
-            ram: document.getElementById('spec_ram').value,
-            cond: document.getElementById('condition').value,
-            vol: document.getElementById('volunteer').value.trim()
+            make: document.getElementById('make').value
         };
-
-        for (let key in fields) {
-            if (!fields[key]) {
-                alert("Please fill in all fields.");
-                return;
-            }
-        }
+        if (!fields.sn || !fields.make) { alert("Please fill details first."); return; }
         
-        const dataString = `MAKE:${fields.make}||MOD:${fields.model}||OS:${fields.os}||SN:${fields.sn}||CPU:${fields.cpu}||SSD:${fields.disk}||RAM:${fields.ram}||COND:${fields.cond}||BY:${fields.vol}`;
+        const dataString = `SN:${fields.sn}||MAKE:${fields.make}`;
 
         qrCode = new QRCodeStyling({
-            width: 300,
-            height: 300,
-            data: dataString,
+            width: 300, height: 300, data: dataString,
             dotsOptions: { color: "#1e293b", type: "rounded" },
-            backgroundOptions: { color: "#fff" },
-            errorCorrectionLevel: "H"
+            backgroundOptions: { color: "#fff" }
         });
 
         const canvasDiv = document.getElementById("canvas");
@@ -163,51 +134,62 @@
         document.getElementById("controls").style.display = "block";
     }
 
-    async function handleDownload(format) {
+    async function handleAction(mode, format) {
         if (!qrCode) return;
         const fileName = `Asset-${document.getElementById('sn').value}`;
-
+        
+        // 1. Get raw image data from the QR styler
+        const rawBlob = await qrCode.getRawData("png");
+        
         if (format === 'png') {
-            qrCode.download({ name: fileName, extension: "png" });
+            if (mode === 'download') {
+                qrCode.download({ name: fileName, extension: "png" });
+            } else {
+                const file = new File([rawBlob], `${fileName}.png`, { type: "image/png" });
+                shareFile(file);
+            }
         } else if (format === 'pdf') {
-            // Use jsPDF for better mobile PWA support
+            // Generate PDF using jsPDF
             const { jsPDF } = window.jspdf;
-            
-            // 1. Get the QR code as a Raw Image (Blob)
-            const rawBlob = await qrCode.getRawData("png");
             const reader = new FileReader();
-            
             reader.onload = async (e) => {
                 const imgData = e.target.result;
                 const pdf = new jsPDF();
-                
-                // Add image to PDF (Centered)
                 pdf.addImage(imgData, 'PNG', 40, 40, 130, 130);
-                pdf.text(`Asset Tag: ${fileName}`, 105, 180, { align: 'center' });
-
+                pdf.text(`Asset: ${fileName}`, 105, 180, { align: 'center' });
+                
                 const pdfBlob = pdf.output('blob');
-                const pdfFile = new File([pdfBlob], `${fileName}.pdf`, { type: "application/pdf" });
-
-                // Check for Web Share API (Best for iOS/Android PWAs)
-                if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
-                    try {
-                        await navigator.share({
-                            files: [pdfFile],
-                            title: 'Asset QR PDF',
-                        });
-                    } catch (err) {
-                        pdf.save(`${fileName}.pdf`); // Fallback
-                    }
+                
+                if (mode === 'download') {
+                    // Direct Download Logic
+                    const blobUrl = URL.createObjectURL(pdfBlob);
+                    const link = document.createElement('a');
+                    link.href = blobUrl;
+                    link.download = `${fileName}.pdf`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
                 } else {
-                    pdf.save(`${fileName}.pdf`); // Desktop Fallback
+                    // Share Logic
+                    const file = new File([pdfBlob], `${fileName}.pdf`, { type: "application/pdf" });
+                    shareFile(file);
                 }
             };
             reader.readAsDataURL(rawBlob);
         }
     }
 
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('./sw.js');
+    async function shareFile(file) {
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            try {
+                await navigator.share({ files: [file], title: 'Asset Tag' });
+            } catch (err) {
+                console.log("Share failed", err);
+            }
+        } else {
+            alert("Sharing not supported on this browser/device.");
+        }
     }
 </script>
 </body>
