@@ -92,9 +92,10 @@
     <div id="canvas"></div>
     
     <div id="controls" style="display:none; text-align: center; margin-top: 10px;">
-        <button class="btn-save" onclick="handleDownload('png')">Download Image (PNG)</button>
-        <button class="btn-save" onclick="handleDownload('pdf')">Download PDF</button>
-    </div>
+    <button class="btn-save" onclick="handleDownload('png')">Download Image (PNG)</button>
+    <button class="btn-save" style="background: #0ea5e9;" onclick="handleDownload('pdf')">Download PDF</button>
+    <button class="btn-test" style="border:none;" onclick="handleSharePDF()">Share PDF</button>
+</div>
 </div>
 
 <script>
@@ -171,37 +172,53 @@
             qrCode.download({ name: fileName, extension: "png" });
         } else if (format === 'pdf') {
             const { jsPDF } = window.jspdf;
-            
             const rawBlob = await qrCode.getRawData("png");
             const reader = new FileReader();
             
-            reader.onload = async (e) => {
+            reader.onload = (e) => {
                 const imgData = e.target.result;
                 const pdf = new jsPDF();
-                
                 pdf.addImage(imgData, 'PNG', 40, 40, 130, 130);
                 pdf.text(`Asset Tag: ${fileName}`, 105, 180, { align: 'center' });
-
-                // Always trigger a direct download first
+                
+                // This forces the download immediately
                 pdf.save(`${fileName}.pdf`);
-
-                // Then offer to share if the browser supports it
-                const pdfBlob = pdf.output('blob');
-                const pdfFile = new File([pdfBlob], `${fileName}.pdf`, { type: "application/pdf" });
-
-                if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
-                    try {
-                        await navigator.share({
-                            files: [pdfFile],
-                            title: 'Asset QR PDF',
-                        });
-                    } catch (err) {
-                        console.log("Share cancelled or failed, but file was downloaded.");
-                    }
-                }
             };
             reader.readAsDataURL(rawBlob);
         }
+    }
+
+    async function handleSharePDF() {
+        if (!qrCode) return;
+        const fileName = `Asset-${document.getElementById('sn').value}`;
+        const { jsPDF } = window.jspdf;
+        
+        const rawBlob = await qrCode.getRawData("png");
+        const reader = new FileReader();
+        
+        reader.onload = async (e) => {
+            const imgData = e.target.result;
+            const pdf = new jsPDF();
+            pdf.addImage(imgData, 'PNG', 40, 40, 130, 130);
+            pdf.text(`Asset Tag: ${fileName}`, 105, 180, { align: 'center' });
+
+            const pdfBlob = pdf.output('blob');
+            const pdfFile = new File([pdfBlob], `${fileName}.pdf`, { type: "application/pdf" });
+
+            if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
+                try {
+                    await navigator.share({
+                        files: [pdfFile],
+                        title: 'Asset QR PDF',
+                    });
+                } catch (err) {
+                    alert("Sharing failed or was cancelled.");
+                }
+            } else {
+                alert("Sharing is not supported on this browser. Try the Download button instead.");
+            }
+        };
+        reader.readAsDataURL(rawBlob);
     }
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('./sw.js');
@@ -209,3 +226,4 @@
 </script>
 </body>
 </html>
+
