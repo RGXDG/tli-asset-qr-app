@@ -1,8 +1,10 @@
-# 📋 Asset QR Gen (PWA)
+# Asset QR Gen v4 🏷️
+A lightweight, mobile-optimized Progressive Web App (PWA) designed for IT volunteers and asset managers to quickly generate and export QR code tags for hardware inventory.
 
-An in-house, portable Progressive Web App designed to generate standardized QR codes for hardware asset tracking. This tool works offline and is optimized for installation on **Android** and **iOS** devices.
+🚀 Overview
+Asset QR Gen simplifies the process of labeling hardware. By entering device specifications (Make, Model, Serial Number, etc.), the app generates a high-quality QR code that embeds this data into a standardized string. This is ideal for organizations that need to audit hardware quickly using any standard QR scanner.
 
-## 🚀 Features
+##  Key Features
 
 * **Standardized Data:** Enforces a specific format for Make, Model, OS, Specs, and Serial Numbers to ensure documentation consistency.
 * **Dynamic Dropdowns:** Pre-configured options for major manufacturers (Dell, HP, Lenovo, Apple) and device specifications.
@@ -14,13 +16,14 @@ An in-house, portable Progressive Web App designed to generate standardized QR c
 
 ---
 
-## 🛠 Tech Stack
+## 🛠️ Technical Stack
+Frontend: HTML5, CSS3 (Flexbox/Grid), JavaScript (ES6+).
 
-* **Core:** HTML5, CSS3, JavaScript (ES6)
-* **QR Engine:** [QR-Code-Styling](https://www.google.com/search?q=https://github.com/SumiMakito/qr-code-styling) (High-fidelity vector generation)
-* **PWA:** Service Workers & Web App Manifest
-* **Hosting:** GitHub Pages (SSL required for PWA installation)
+QR Generation: qr-code-styling for beautiful, rounded QR patterns.
 
+PDF Logic: jsPDF for client-side document generation.
+
+Deployment: Designed for static hosting (GitHub Pages, Vercel, or Netlify).
 ---
 
 ## 📂 Project Structure
@@ -82,7 +85,6 @@ Before deploying to a production environment, comment out or remove the followin
 
 ## ⚠️ Troubleshooting
 
-* **404 Not Found (GitHub Pages):** Ensure your main file is named exactly `index.html` (all lowercase) and is located in the root directory.
 * **PWA Not Installing:** Ensure you are accessing the site via **HTTPS**. Service workers will not register over unencrypted connections.
 * **QR Code Not Scanning:** If the QR code is too "dense," try shortening the input text or increasing the physical size of the printed label.
 
